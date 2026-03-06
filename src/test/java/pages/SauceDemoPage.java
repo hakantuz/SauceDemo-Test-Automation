@@ -19,8 +19,11 @@ public class SauceDemoPage {
     @FindBy(xpath = "//input[@id='login-button']")
     public WebElement loginButton;
 
-    @FindBy(xpath = "//span[@class='title']" )
+    @FindBy(xpath = "//span[@class='title']")
     public WebElement products;
+
+    @FindBy(xpath = "//button[@id='add-to-cart-sauce-labs-backpack'")
+    public WebElement addtocart;
 
 
 
