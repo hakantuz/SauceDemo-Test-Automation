@@ -23,8 +23,8 @@ public class SauceDemoTest extends TestBase {
 
         String ekrandakiYazi = sauceDemoPage.products.getText();
         String beklenenYazi = "Products";
-        Assert.assertEquals(ekrandakiYazi, beklenenYazi, "HATA: Products başlığı görüntülenemedi! Yanlış sayfadayız.");
-        System.out.println("Başlık Doğrulandı: " + ekrandakiYazi);
+        Assert.assertEquals(ekrandakiYazi, beklenenYazi, "HATA: Products basligi goruntulenemedi! Yanlis sayfadayiz.");
+        System.out.println("Baslik Dogrulandi: " + ekrandakiYazi);
 
 
 
