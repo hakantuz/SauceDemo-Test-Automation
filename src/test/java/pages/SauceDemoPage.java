@@ -69,6 +69,15 @@ public class SauceDemoPage {
         continueButton.click();
     }
 
+    @FindBy(xpath = "//h3[@data-test='error']")
+    public WebElement errorMessage;
+
+    public void login(String kullaniciAdi, String sifre) {
+        username.sendKeys(kullaniciAdi);
+        password.sendKeys(sifre);
+        loginButton.click();
+    }
+
 
 
 }
