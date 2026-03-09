@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+<suite name="SauceDemo Projesi - Genel Koşum">
+
+    <test name="Tüm Testler (Regression)">
+        <classes>
+            <class name="tests.SauceDemoTest"/>
+
+            <class name="tests.ShoppingTest"/>
+
+            <class name="tests.NegativeLoginTest"/>
+        </classes>
+    </test>
+
+</suite>

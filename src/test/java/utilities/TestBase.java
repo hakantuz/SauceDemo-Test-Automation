@@ -1,36 +1,76 @@
 package utilities;
 
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
+import com.aventstack.extentreports.ExtentReports;
+import com.aventstack.extentreports.ExtentTest;
+import com.aventstack.extentreports.reporter.ExtentSparkReporter;
+import org.openqa.selenium.WebDriver;
+import org.testng.ITestResult;
+import org.testng.annotations.*;
+
+import java.io.File;
+import java.text.SimpleDateFormat;
 import java.time.Duration;
+import java.util.Date;
 
-// abstract yapıyoruz ki kimse bu sınıftan nesne üretemesin, sadece miras alabilsin.
-public abstract class TestBase {
+public class TestBase {
 
-    // @BeforeMethod: Her test metodundan (@Test) ÖNCE çalışır.
-    @BeforeMethod
-    public void setUp() {
-        // Driver'ı çağır (Singleton yapımız sayesinde zaten varsa yenisini açmaz)
-        Driver.getDriver().manage().window().maximize();
-        Driver.getDriver().manage().timeouts().implicitlyWait(Duration.ofSeconds(15));
-    }
+    protected WebDriver driver;
+    protected static ExtentReports extentReports;
+    protected static ExtentSparkReporter extentHtmlReporter;
+    protected static ExtentTest extentTest;
 
-    // @AfterMethod: Her test metodundan SONRA çalışır.
-    @AfterMethod
-    public void tearDown() {
-        // Test bittiğinde ortalığı temizle ve tarayıcıyı kapat
-        Driver.closeDriver();
-    }
-
-    // --- ORTAK KULLANILAN METOTLAR (Reusable Methods) ---
-
-    // Java'nın o gıcık Thread.sleep hatasını (Exception) her yerde try-catch yapmamak için:
-    public void bekle(int saniye) {
-        try {
-            Thread.sleep(saniye * 1000);
-        } catch (InterruptedException e) {
-            System.out.println("Bekleme işleminde hata oluştu!");
-            throw new RuntimeException(e);
+    @BeforeSuite(alwaysRun = true)
+    public void setUpSuite() {
+        // 1. Rapor Yolu (Klasör yoksa oluşturur)
+        String path = System.getProperty("user.dir") + "/test-output";
+        File dir = new File(path);
+        if (!dir.exists()) {
+            dir.mkdir();
         }
+
+        // 2. Dosya İsmi (Tarihli)
+        String date = new SimpleDateFormat("yyyyMMddhhmmss").format(new Date());
+        String filePath = path + "/Rapor_" + date + ".html";
+
+        // 3. Raporu Başlat
+        extentHtmlReporter = new ExtentSparkReporter(filePath);
+        extentHtmlReporter.config().setDocumentTitle("SauceDemo Raporu");
+        extentHtmlReporter.config().setReportName("Otomasyon Testleri");
+
+        extentReports = new ExtentReports();
+        extentReports.attachReporter(extentHtmlReporter);
+        extentReports.setSystemInfo("Tester", "Hakan Komutan");
+
+        System.out.println("📢 RAPOR BAŞLATILDI: " + filePath);
     }
+
+    @BeforeMethod(alwaysRun = true)
+    public void setUp(java.lang.reflect.Method method) {
+        driver = Driver.getDriver();
+        driver.manage().window().maximize();
+        driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(15));
+
+        extentTest = extentReports.createTest(method.getName());
+        extentTest.info("Test Adımı Başladı.");
+    }
+
+    @AfterMethod(alwaysRun = true)
+    public void tearDown(ITestResult result) {
+        if (result.getStatus() == ITestResult.FAILURE) {
+            extentTest.fail("❌ HATA: " + result.getName());
+            extentTest.fail(result.getThrowable());
+        } else if (result.getStatus() == ITestResult.SUCCESS) {
+            extentTest.pass("✅ GEÇTİ: " + result.getName());
+        } else {
+            extentTest.skip("⚠️ ATLANDI: " + result.getName());
+        }
+
+        Driver.closeDriver();
+
+        //HER TESTTEN SONRA KAYDET
+        extentReports.flush();
+        System.out.println("💾 Rapor anlık olarak kaydedildi.");
+    }
+
+
 }
