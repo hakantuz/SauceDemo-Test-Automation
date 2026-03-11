@@ -2,7 +2,7 @@ package utilities;
 
 import com.aventstack.extentreports.ExtentReports;
 import com.aventstack.extentreports.ExtentTest;
-import com.aventstack.extentreports.reporter.ExtentSparkReporter;
+import com.aventstack.extentreports.reporter.ExtentHtmlReporter; // <-- ARTIK SPARK DEĞİL, HTML REPORTER
 import org.openqa.selenium.WebDriver;
 import org.testng.ITestResult;
 import org.testng.annotations.*;
@@ -16,32 +16,38 @@ public class TestBase {
 
     protected WebDriver driver;
     protected static ExtentReports extentReports;
-    protected static ExtentSparkReporter extentHtmlReporter;
+    protected static ExtentHtmlReporter extentHtmlReporter; // <-- DEĞİŞEN YER
     protected static ExtentTest extentTest;
 
     @BeforeSuite(alwaysRun = true)
     public void setUpSuite() {
-        // 1. Rapor Yolu (Klasör yoksa oluşturur)
-        String path = System.getProperty("user.dir") + "/test-output";
-        File dir = new File(path);
-        if (!dir.exists()) {
-            dir.mkdir();
+        try {
+            // 1. Klasör Yolu
+            String targetFolder = System.getProperty("user.dir") + File.separator + "test-output";
+            File dir = new File(targetFolder);
+            if (!dir.exists()) {
+                dir.mkdirs();
+            }
+
+            // 2. Dosya Yolu
+            String date = new SimpleDateFormat("yyyyMMddhhmmss").format(new Date());
+            String filePath = targetFolder + File.separator + "Rapor_" + date + ".html";
+
+            // 3. RAPOR MOTORUNU BAŞLAT (v4 Mantığı)
+            extentHtmlReporter = new ExtentHtmlReporter(filePath);
+            extentHtmlReporter.config().setDocumentTitle("SauceDemo Raporu");
+            extentHtmlReporter.config().setReportName("Otomasyon Testleri");
+
+            extentReports = new ExtentReports();
+            extentReports.attachReporter(extentHtmlReporter);
+            extentReports.setSystemInfo("QA Engineer", "Hakan");
+            extentReports.setSystemInfo("Browser", "Chrome");
+
+            System.out.println("✅ [SİSTEM] V4 HTML Rapor motoru hazır! Yol: " + filePath);
+
+        } catch (Exception e) {
+            System.out.println("❌ [HATA] " + e.getMessage());
         }
-
-        // 2. Dosya İsmi (Tarihli)
-        String date = new SimpleDateFormat("yyyyMMddhhmmss").format(new Date());
-        String filePath = path + "/Rapor_" + date + ".html";
-
-        // 3. Raporu Başlat
-        extentHtmlReporter = new ExtentSparkReporter(filePath);
-        extentHtmlReporter.config().setDocumentTitle("SauceDemo Raporu");
-        extentHtmlReporter.config().setReportName("Otomasyon Testleri");
-
-        extentReports = new ExtentReports();
-        extentReports.attachReporter(extentHtmlReporter);
-        extentReports.setSystemInfo("Tester", "Hakan Komutan");
-
-        System.out.println("📢 RAPOR BAŞLATILDI: " + filePath);
     }
 
     @BeforeMethod(alwaysRun = true)
@@ -50,27 +56,30 @@ public class TestBase {
         driver.manage().window().maximize();
         driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(15));
 
-        extentTest = extentReports.createTest(method.getName());
-        extentTest.info("Test Adımı Başladı.");
+        if (extentReports != null) {
+            extentTest = extentReports.createTest(method.getName());
+            extentTest.info("Test adımı başladı.");
+        }
     }
 
     @AfterMethod(alwaysRun = true)
     public void tearDown(ITestResult result) {
-        if (result.getStatus() == ITestResult.FAILURE) {
-            extentTest.fail("❌ HATA: " + result.getName());
-            extentTest.fail(result.getThrowable());
-        } else if (result.getStatus() == ITestResult.SUCCESS) {
-            extentTest.pass("✅ GEÇTİ: " + result.getName());
-        } else {
-            extentTest.skip("⚠️ ATLANDI: " + result.getName());
+        if (extentTest != null) {
+            if (result.getStatus() == ITestResult.FAILURE) {
+                extentTest.fail("❌ HATA: Test başarısız.");
+                extentTest.fail(result.getThrowable());
+            } else if (result.getStatus() == ITestResult.SUCCESS) {
+                extentTest.pass("✅ BAŞARILI: Test geçti.");
+            } else {
+                extentTest.skip("⚠️ ATLANDI.");
+            }
         }
 
         Driver.closeDriver();
 
-        //HER TESTTEN SONRA KAYDET
-        extentReports.flush();
-        System.out.println("💾 Rapor anlık olarak kaydedildi.");
+        if (extentReports != null) {
+            extentReports.flush();
+            System.out.println("💾 [SİSTEM] Rapor dosyaya YAZILDI!");
+        }
     }
-
-
 }
